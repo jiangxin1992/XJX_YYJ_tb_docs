@@ -1,0 +1,6 @@
+version: '2'
+services:
+  yej:
+    build: .
+    ports:
+      - "54321:80"

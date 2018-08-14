@@ -1,0 +1,5 @@
+{
+	"host":"121.40.57.9",
+	"port":6379,
+	"password":"yunejian-redis-100"
+}

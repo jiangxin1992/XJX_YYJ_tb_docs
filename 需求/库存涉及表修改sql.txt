@@ -1,0 +1,294 @@
+ALTER TABLE `designer_series`
+ADD COLUMN `order_price_min`  decimal(7,2) NULL COMMENT '最小起订金额' AFTER `region`;
+
+ALTER TABLE `designer_series`
+MODIFY COLUMN `order_amount_min`  int(11) NULL COMMENT '每款起订量' AFTER `status`;
+
+ALTER TABLE `designer_series`
+ADD COLUMN `order_price_cur_type`  int(2) NULL AFTER `order_price_min`;
+##----------------------------------------------
+
+ALTER TABLE `designer_series_log`
+ADD COLUMN `order_price_min`  decimal(7,2) NULL COMMENT '最小起订金额' AFTER `region`;
+
+##----------------------------------------------
+DROP TRIGGER `designer_series_after_insert`;
+
+CREATE TRIGGER `designer_series_after_insert` AFTER INSERT ON `designer_series`
+FOR EACH ROW BEGIN
+
+
+insert into designer_series_log
+(
+id,
+designer_id,
+name,
+description,
+`year`,
+season,
+album_img,
+order_due_time,
+supply_status,
+auth_type,
+supply_start_time,
+supply_end_time,
+note,
+create_id,
+modify_id,
+create_time,
+modify_time,
+`status`,
+order_amount_min,
+region,
+order_price_min
+)
+values
+(
+NEW.id,
+NEW.designer_id,
+NEW.name,
+NEW.description,
+NEW.`year`,
+NEW.season,
+NEW.album_img,
+NEW.order_due_time,
+NEW.supply_status,
+NEW.auth_type,
+NEW.supply_start_time,
+NEW.supply_end_time,
+NEW.note,
+NEW.create_id,
+NEW.modify_id,
+NEW.create_time,
+NEW.modify_time,
+NEW.`status`,
+NEW.order_amount_min,
+NEW.region,
+NEW.order_price_min
+);
+
+END;
+
+##----------------------------------------------
+
+
+ALTER TABLE `order_series_info`
+ADD COLUMN `order_price_min`  decimal(7,2) NULL COMMENT '最小起订金额' AFTER `region`;
+
+##----------------------------------------------
+
+ALTER TABLE `style_color`
+ADD COLUMN `style_code`  varchar(50) NULL COMMENT '款式编号' AFTER `style_id`,
+ADD COLUMN `materials`  varchar(200) NULL COMMENT '材质成分' AFTER `color`,
+ADD COLUMN `trade_price`  decimal(7,2) NULL COMMENT '批发价' AFTER `materials`,
+ADD COLUMN `retail_price`  decimal(7,2) NULL COMMENT '零售价' AFTER `trade_price`;
+
+##---------------------------------------------
+
+ALTER TABLE `style_color_log`
+ADD COLUMN `style_code`  varchar(50) NULL COMMENT '款式编号' AFTER `style_id`,
+ADD COLUMN `materials`  varchar(200) NULL COMMENT '材质成分' AFTER `color`,
+ADD COLUMN `trade_price`  decimal(7,2) NULL COMMENT '批发价' AFTER `materials`,
+ADD COLUMN `retail_price`  decimal(7,2) NULL COMMENT '零售价' AFTER `trade_price`;
+
+
+##---------------------------------------------
+
+DROP TRIGGER `style_color_after_insert`;
+
+CREATE TRIGGER `style_color_after_insert` AFTER INSERT ON `style_color`
+FOR EACH ROW BEGIN
+insert into style_color_log
+(
+`id`,
+`name`,
+`designer_id`,
+`style_id`,
+`style_code`,
+`color`,
+`materials`,
+`trade_price`,
+`retail_price`,
+`modify_time`,
+`color_id`
+)
+values
+(
+NEW.`id`,
+NEW.`name`,
+NEW.`designer_id`,
+NEW.`style_id`,
+NEW.`style_code`,
+NEW.`color`,
+NEW.`materials`,
+NEW.`trade_price`,
+NEW.`retail_price`,
+NEW.`modify_time`,
+NEW.`color_id`
+);
+END;
+
+##---------------------------------------------
+
+
+ALTER TABLE `order_style_color_info`
+ADD COLUMN `style_code`  varchar(50) NULL COMMENT '款式编号' AFTER `style_id`,
+ADD COLUMN `materials`  varchar(200) NULL COMMENT '材质成分' AFTER `color`,
+ADD COLUMN `trade_price`  decimal(7,2) NULL COMMENT '批发价' AFTER `materials`,
+ADD COLUMN `retail_price`  decimal(7,2) NULL COMMENT '零售价' AFTER `trade_price`;
+
+##---------------------------------------------
+
+CREATE TABLE `sku_stock` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `style_id` bigint(20) NOT NULL COMMENT '款式id',
+  `color_id` bigint(20) NOT NULL COMMENT '标准颜色id',
+  `size_id` bigint(20) NOT NULL COMMENT '标准尺码id',
+  `stock` int(11) DEFAULT NULL COMMENT '库存数',
+  `freeze_stock` int(11) DEFAULT NULL COMMENT '冻结数',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+##---------------------------------------------
+
+
+CREATE TABLE `sku_stock_log` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `sku_id` bigint(20) NOT NULL COMMENT 'sku_stock表id',
+  `num` int(11) NOT NULL COMMENT '变动数量',
+  `create_time` timestamp NULL DEFAULT NULL COMMENT '操作时间',
+  `creator` int(11) DEFAULT NULL COMMENT '操作人',
+  `creator_type` int(11) DEFAULT NULL COMMENT '操作人类型',
+  `order_code` varchar(50) DEFAULT NULL COMMENT '关联订单号,选填',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+##---------------------------------------------
+
+DROP PROCEDURE IF EXISTS `order_series_info_clone`;
+
+CREATE DEFINER = `yej_server`@`%` PROCEDURE `order_series_info_clone`(IN `style_id_in` BIGINT, IN `style_modify_time_in` TIMESTAMP, IN `order_id_in` BIGINT, IN `supply_start_time_in` TIMESTAMP, IN `supply_end_time_in` TIMESTAMP)
+BEGIN
+
+declare series_acount int default 1;
+declare series_id_p bigint default -1;
+
+declare v_id BIGINT(20);
+declare v_designer_id INT(11);
+declare v_name VARCHAR(50) ;
+declare v_description VARCHAR(5000) ;
+declare v_year INT(4) ;
+declare v_season VARCHAR(50) ;
+declare v_album_img VARCHAR(500) ;
+declare v_order_due_time TIMESTAMP ;
+declare v_supply_status INT(1) ;
+declare v_auth_type INT(1) ;
+declare v_supply_start_time TIMESTAMP ;
+declare v_supply_end_time TIMESTAMP ;
+declare v_note VARCHAR(2000) ;
+declare v_create_id INT(11) ;
+declare v_modify_id INT(11) ;
+declare v_create_time TIMESTAMP ;
+declare v_modify_time TIMESTAMP ;
+declare v_status INT(2) ;
+declare v_order_amount_min int(11);
+declare v_region VARCHAR(50);
+declare v_order_price_min decimal(7,2);
+
+select series_id into series_id_p from designer_style_log where id = style_id_in and modify_time = style_modify_time_in limit 1;
+
+if series_id_p != -1 then
+	select count(*) into series_acount from order_series_info where id = series_id_p and order_id = order_id_in;
+	if series_acount = 0 then
+		select
+			id, designer_id, name, description, year, season, album_img, order_due_time, supply_status, auth_type, supply_start_time, supply_end_time, note, create_id, modify_id, create_time, modify_time, `status`,order_amount_min,region,order_price_min
+			into
+			v_id, v_designer_id, v_name, v_description, v_year, v_season, v_album_img, v_order_due_time, v_supply_status, v_auth_type, v_supply_start_time, v_supply_end_time, v_note, v_create_id, v_modify_id, v_create_time, v_modify_time, v_status,v_order_amount_min,v_region,v_order_price_min
+			from designer_series where id = series_id_p;
+
+		insert into order_series_info
+			(order_id, id, designer_id, name, description, year, season, album_img, order_due_time, supply_status, auth_type, supply_start_time, supply_end_time, note, create_id, modify_id, create_time, modify_time, `status`,order_amount_min,region,order_price_min)
+			values
+			(order_id_in, v_id, v_designer_id, v_name, v_description, v_year, v_season, v_album_img, v_order_due_time, v_supply_status, v_auth_type, supply_start_time_in, supply_end_time_in, v_note, v_create_id, v_modify_id, v_create_time, v_modify_time, v_status,v_order_amount_min,v_region,v_order_price_min);
+	end if;
+end if;
+
+END;
+
+##---------------------------------------------
+
+DROP PROCEDURE IF EXISTS `order_style_color_info_clone`;
+
+CREATE DEFINER = `yej_server`@`%` PROCEDURE `order_style_color_info_clone`(IN `style_id_in` BIGINT, IN `order_id_in` BIGINT, IN `modify_time_in` TIMESTAMP)
+BEGIN
+declare v_id BIGINT(20);
+declare v_name VARCHAR(50);
+declare v_designer_id INT(11);
+declare v_style_id BIGINT(20);
+declare v_style_code varchar(50);
+declare v_color VARCHAR(500);
+declare v_materials varchar(200);
+declare v_trade_price DECIMAL(7,2);
+declare v_retail_price DECIMAL(7,2);
+declare v_color_id BIGINT(20);
+
+
+declare has_next bool default true;
+declare cur cursor for select distinct id, name, designer_id, style_id, style_code, color,materials,trade_price,retail_price,color_id from style_color_log where style_id = style_id_in and modify_time = modify_time_in;
+declare continue handler for not found set has_next = false;
+
+open cur;
+
+fetch cur into v_id, v_name, v_designer_id, v_style_id,v_style_code, v_color,v_materials,v_trade_price,v_retail_price, v_color_id;
+while has_next do
+	insert into order_style_color_info (order_id, id, name, designer_id, style_id,style_code, color, materials, trade_price, retail_price, color_id)
+	values (order_id_in, v_id, v_name, v_designer_id, v_style_id, v_style_code, v_color, v_materials, v_trade_price, v_retail_price, v_color_id);
+
+	fetch cur into v_id, v_name, v_designer_id, v_style_id,v_style_code, v_color, v_materials, v_trade_price, v_retail_price, v_color_id;
+end while;
+
+close cur;
+
+END;
+
+##--------------------------------------------
+
+DROP PROCEDURE IF EXISTS `style_color_clone`;
+
+CREATE DEFINER = `yej_server`@`%` PROCEDURE `style_color_clone`(IN `style_id_in` BIGINT, IN `modify_time_in` TIMESTAMP)
+BEGIN
+declare v_id BIGINT(20);
+declare v_name VARCHAR(50);
+declare v_designer_id INT(11);
+declare v_style_id BIGINT(20);
+declare v_style_code VARCHAR(50);
+declare v_color VARCHAR(500);
+declare v_materials VARCHAR(200);
+declare v_trade_price DECIMAL(7,2);
+declare v_retail_price DECIMAL(7,2);
+declare v_modify_time TIMESTAMP;
+declare v_color_id BIGINT(20);
+
+
+declare has_next bool default true;
+declare cur cursor for select id, name, designer_id, style_id, style_code, color, materials, trade_price, retail_price, modify_time, color_id  from style_color where style_id = style_id_in;
+declare continue handler for not found set has_next = false;
+
+open cur;
+
+fetch cur into v_id, v_name, v_designer_id, v_style_id, v_style_code, v_color, v_materials, v_trade_price, v_retail_price, v_modify_time, v_color_id;
+while has_next do
+	insert into style_color_log (id, name, designer_id, style_id, style_code, color, materials, trade_price, retail_price, modify_time, color_id)
+	values (v_id, v_name, v_designer_id, v_style_id, v_style_code, v_color, v_materials, v_trade_price, v_retail_price, v_modify_time, v_color_id);
+
+	insert into style_color_log (id, name, designer_id, style_id, style_code, color, materials, trade_price, retail_price, modify_time, color_id)
+	values (v_id, v_name, v_designer_id, v_style_id, v_style_code, v_color, v_materials, v_trade_price, v_retail_price, modify_time_in, v_color_id);
+
+	fetch cur into v_id, v_name, v_designer_id, v_style_id, v_style_code, v_color, v_materials, v_trade_price, v_retail_price, v_modify_time, v_color_id;
+end while;
+
+close cur;
+
+update style_color set modify_time = modify_time_in where style_id = style_id_in;
+
+END;

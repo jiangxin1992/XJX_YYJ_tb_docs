@@ -1,0 +1,42 @@
+:target {
+    border-bottom: 3px solid #58c776;
+    padding-bottom: 5px;
+}
+
+:target+ul,:target+table th{
+    animation: highlight 2.5s ease;
+}
+
+@keyframes highlight{
+    from{
+        background: #FFAB91;
+    }
+}
+
+body {
+    width: 55em;
+}
+
+.markdown-body a {
+    position: relative;
+}
+
+.markdown-body a:hover {
+    text-decoration: none;
+}
+
+.markdown-body a:before {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    bottom: -2px;
+    left: 0;
+    background-color: tomato;
+    transform: scaleX(0);
+    transition: all 0.3s ease-in-out 0s;
+}
+
+.markdown-body a:hover:before {
+    transform: scaleX(1);
+}
